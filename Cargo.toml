@@ -1,0 +1,6 @@
+[package]
+name = "spectro2"
+version = "0.1.0"
+authors = ["Audun Halland <audun.halland@knowit.no>"]
+
+[dependencies]

@@ -1,0 +1,48 @@
+<head>
+  <title>WebAssembly Spectro</title>
+</head>
+<body>
+  <script src="spectro2-df285fba87916109.js"></script>
+  <script>
+    console.log(Module._test);
+    //Module._test();
+    /*
+    var importObject = {
+      imports: {
+        imported_func: console.log
+      }
+    };
+
+    // Download and compile the file:
+    fetch("simple.wasm").then(response =>
+      response.arrayBuffer()
+    ).then(bytes =>
+      WebAssembly.instantiate(bytes, importObject)
+    ).then(results => {
+      results.instance.exports.exported_func();
+    });
+    */
+
+    /*
+    navigator.mediaDevices.getUserMedia({audio: true})
+      .then(stream => {
+        const ctx = new AudioContext();
+        const source = ctx.createMediaStreamSource(stream);
+        const processor = ctx.createScriptProcessor(2048, 2, 2);
+
+        processor.onaudioprocess = (event) => {
+          console.log('process!');
+          const left = event.inputBuffer.getChannelData(0);
+        };
+
+        source.connect(processor);
+        processor.connect(ctx.destination);
+      }).
+      catch(err => {
+        console.log('Media error: ', err);
+      });
+      */
+  </script>
+</head>
+  WebAssembly Spectro!
+</body>
