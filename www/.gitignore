@@ -2,3 +2,5 @@
 *.js.map
 *.wasm
 *.wast
+*.o
+*.d

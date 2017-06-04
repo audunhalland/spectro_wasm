@@ -2,9 +2,29 @@
   <title>WebAssembly Spectro</title>
 </head>
 <body>
-  <script src="spectro2-df285fba87916109.js"></script>
+  <!--<script src="spectro2-df285fba87916109.js"></script>-->
   <script>
-    console.log(Module._test);
+    const scriptName = 'spectro2-df285fba87916109';
+    var Module = {};
+
+    fetch(`${scriptName}.wasm`)
+      .then(response => response.arrayBuffer())
+      .then(buffer => {
+        Module.wasmBinary = buffer;
+
+        const script = document.createElement('script');
+        script.src = `${scriptName}.js`;
+        script.onload = () => {
+          console.log(`${scriptName} loaded!`);
+          console.log(Module._test);
+          Module._test();
+        };
+        document.body.appendChild(script);
+      })
+      .catch(err => {
+        console.log('satan! ', err);
+      });
+    //console.log(Module._test);
     //Module._test();
     /*
     var importObject = {

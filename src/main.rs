@@ -8,6 +8,7 @@ pub fn test() {
     println!("rust: test!");
 }
 
+// When exporting test, main is not exported at all.
 fn main() {
     println!("rust: main. NO CALLS HERE");
 }
