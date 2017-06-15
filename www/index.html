@@ -2,66 +2,51 @@
   <title>WebAssembly Spectro</title>
 </head>
 <body>
-  <!--<script src="spectro2-df285fba87916109.js"></script>-->
   <script>
     const scriptName = 'spectro2-df285fba87916109';
+    // Need this global variable, which is stupid.
     var Module = {};
 
-    fetch(`${scriptName}.wasm`)
-      .then(response => response.arrayBuffer())
-      .then(buffer => {
-        Module.wasmBinary = buffer;
+    function load_spectro2() {
+      return fetch(`${scriptName}.wasm`)
+        .then(response => response.arrayBuffer())
+        .then(buffer => {
+          Module.wasmBinary = buffer;
 
-        const script = document.createElement('script');
-        script.src = `${scriptName}.js`;
-        script.onload = () => {
-          console.log(`${scriptName} loaded!`);
-          console.log(Module._test);
-          Module._test();
-        };
-        document.body.appendChild(script);
-      })
-      .catch(err => {
-        console.log('satan! ', err);
-      });
-    //console.log(Module._test);
-    //Module._test();
-    /*
-    var importObject = {
-      imports: {
-        imported_func: console.log
-      }
-    };
+          return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `${scriptName}.js`;
+            document.body.appendChild(script);
+            script.onload = () => {
+              console.log(`${scriptName} loaded!`);
+              console.log('test function: ', Module._test);
+              resolve(Module);
+            };
+          });
+        });
+    }
 
-    // Download and compile the file:
-    fetch("simple.wasm").then(response =>
-      response.arrayBuffer()
-    ).then(bytes =>
-      WebAssembly.instantiate(bytes, importObject)
-    ).then(results => {
-      results.instance.exports.exported_func();
-    });
-    */
-
-    /*
-    navigator.mediaDevices.getUserMedia({audio: true})
-      .then(stream => {
+    Promise.all([load_spectro2(), navigator.mediaDevices.getUserMedia({ audio: true })])
+      .then(([wasm_module, stream]) => {
         const ctx = new AudioContext();
         const source = ctx.createMediaStreamSource(stream);
         const processor = ctx.createScriptProcessor(2048, 2, 2);
 
+        var count = 0;
+
         processor.onaudioprocess = (event) => {
-          console.log('process!');
           const left = event.inputBuffer.getChannelData(0);
+          if (count === 0) {
+            console.log(left);
+          }
+          count++;
         };
 
         source.connect(processor);
         processor.connect(ctx.destination);
-      }).
-      catch(err => {
-        console.log('Media error: ', err);
+      }).catch(err => {
+        console.log('error! ', err);
       });
-      */
   </script>
 </head>
   WebAssembly Spectro!
