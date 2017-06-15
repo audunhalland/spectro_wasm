@@ -19,7 +19,7 @@
             document.body.appendChild(script);
             script.onload = () => {
               console.log(`${scriptName} loaded!`);
-              console.log('test function: ', Module._test);
+              console.log('analyze function: ', Module._analyze);
               resolve(Module);
             };
           });
@@ -27,19 +27,24 @@
     }
 
     Promise.all([load_spectro2(), navigator.mediaDevices.getUserMedia({ audio: true })])
-      .then(([wasm_module, stream]) => {
+      .then(([wm, stream]) => {
+        const bufsize = 2048;
         const ctx = new AudioContext();
         const source = ctx.createMediaStreamSource(stream);
-        const processor = ctx.createScriptProcessor(2048, 2, 2);
+        const processor = ctx.createScriptProcessor(bufsize, 2, 2);
 
-        var count = 0;
+        // "native" sample memory
+        const buf = wm._malloc(bufsize * 4);
 
         processor.onaudioprocess = (event) => {
-          const left = event.inputBuffer.getChannelData(0);
-          if (count === 0) {
-            console.log(left);
-          }
-          count++;
+          // left channel only...
+          const jsData = event.inputBuffer.getChannelData(0);
+
+          // "memcpy" data into wasm mem pool
+          wm.HEAPF32.set(jsData, buf / 4);
+
+          // Call into wasm
+          wm._analyze(buf, bufsize);
         };
 
         source.connect(processor);
