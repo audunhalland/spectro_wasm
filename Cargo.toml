@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Audun Halland <audun.halland@knowit.no>"]
 
 [dependencies]
+rustfft = "2.0.0"
