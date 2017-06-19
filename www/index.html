@@ -3,22 +3,21 @@
 </head>
 <body>
   <script>
-    const scriptName = 'spectro2';
     // Need this global variable, which is stupid.
     var Module = {};
 
     function load_spectro2() {
-      return fetch(`${scriptName}.wasm`)
+      return fetch('spectro2.wasm')
         .then(response => response.arrayBuffer())
         .then(buffer => {
           Module.wasmBinary = buffer;
 
           return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = `${scriptName}.js`;
+            script.src = 'spectro2.js';
             document.body.appendChild(script);
             script.onload = () => {
-              console.log(`${scriptName} loaded!`);
+              console.log('spectro2 loaded!');
               console.log('analyze function: ', Module._analyze);
               resolve(Module);
             };
@@ -36,25 +35,38 @@
 
     Promise.all([load_spectro2(), navigator.mediaDevices.getUserMedia({ audio: true })])
       .then(([wm, stream]) => {
-        const bufsize = 2048;
+        const audioBufsize = 2048;
+        const gfxWidth = 400;
+        const gfxHeight = 300;
         const ctx = new AudioContext();
         const source = ctx.createMediaStreamSource(stream);
-        const processor = ctx.createScriptProcessor(bufsize, 2, 2);
+        const processor = ctx.createScriptProcessor(audioBufsize, 2, 2);
 
         test_memory();
 
-        // "native" sample memory
-        const buf = wm._malloc(bufsize * 4);
+        // Audio memory
+        const audioBuf = Module._malloc(audioBufsize * 4);
+
+        // Graphics memory
+        const gfxSize = gfxWidth * gfxHeight * 4;
+        const gfxBuf = Module._malloc(gfxSize);
+        const gfxArray = new Uint8ClampedArray(Module.HEAPU8.buffer, gfxBuf, gfxSize);
+        const gfx = new ImageData(gfxArray, gfxWidth, gfxHeight);
+
+        const canvas = document.getElementById('canvas');
+        const gfxCtx = canvas.getContext('2d');
 
         processor.onaudioprocess = (event) => {
           // left channel only...
           const jsData = event.inputBuffer.getChannelData(0);
 
           // "memcpy" data into wasm mem pool
-          wm.HEAPF32.set(jsData, buf / 4);
+          wm.HEAPF32.set(jsData, audioBuf / 4);
 
           // Call into wasm
-          wm._analyze(buf, bufsize);
+          wm._draw_spectro(audioBuf, audioBufsize, gfxBuf, gfxWidth, gfxHeight);
+
+          gfxCtx.putImageData(gfx, 0, 0);
         };
 
         source.connect(processor);
@@ -63,6 +75,6 @@
         console.log('error! ', err);
       });
   </script>
-</head>
   WebAssembly Spectro!
+  <canvas id="canvas" width=400 height=300/>
 </body>
