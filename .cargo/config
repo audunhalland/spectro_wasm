@@ -1,0 +1,2 @@
+[target.wasm32-unknown-emscripten]
+rustflags = ["-Clink-args=-s EXPORTED_FUNCTIONS=['_add_one','_analyze']"]

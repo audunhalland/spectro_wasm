@@ -1,7 +1,7 @@
 [package]
 name = "spectro2"
 version = "0.1.0"
-authors = ["Audun Halland <audun.halland@knowit.no>"]
+authors = ["Audun Halland <audun.halland@gmail.com>"]
 
 [dependencies]
 rustfft = "2.0.0"

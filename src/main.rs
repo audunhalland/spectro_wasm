@@ -1,13 +1,13 @@
-#![feature(link_args)]
-
-#[link_args = "-s EXPORTED_FUNCTIONS=['_analyze']"]
-extern {}
-
 use std::slice;
 
 extern crate rustfft;
 
 use rustfft::num_complex::Complex;
+
+#[no_mangle]
+pub unsafe fn add_one(ptr: *const u32) -> u32 {
+    *ptr + 1
+}
 
 #[no_mangle]
 pub unsafe fn analyze(buf: *const f32, length: usize) {

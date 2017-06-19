@@ -3,7 +3,7 @@
 </head>
 <body>
   <script>
-    const scriptName = 'spectro2-df285fba87916109';
+    const scriptName = 'spectro2';
     // Need this global variable, which is stupid.
     var Module = {};
 
@@ -26,12 +26,22 @@
         });
     }
 
+    function test_memory() {
+      const ptr = Module._malloc(4);
+      Module.HEAPU32[ptr>>2] = 41;
+      const result = Module._add_one(ptr);
+      console.log('ptr=%s, result=%s', ptr, result);
+      //wm._free(ptr);
+    }
+
     Promise.all([load_spectro2(), navigator.mediaDevices.getUserMedia({ audio: true })])
       .then(([wm, stream]) => {
         const bufsize = 2048;
         const ctx = new AudioContext();
         const source = ctx.createMediaStreamSource(stream);
         const processor = ctx.createScriptProcessor(bufsize, 2, 2);
+
+        test_memory();
 
         // "native" sample memory
         const buf = wm._malloc(bufsize * 4);
