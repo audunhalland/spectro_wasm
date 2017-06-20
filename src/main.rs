@@ -4,6 +4,40 @@ extern crate rustfft;
 
 use rustfft::num_complex::Complex;
 
+struct Color {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8
+}
+
+struct Surface<'a> {
+    pub buf: &'a mut [u8],
+    pub width: usize,
+    pub height: usize
+}
+
+impl<'a> Surface<'a> {
+    pub unsafe fn new(buf: *mut u8, width: usize, height: usize) -> Surface<'a> {
+        Surface {
+            buf: slice::from_raw_parts_mut(buf, width * height * 4),
+            width: width,
+            height: height
+        }
+    }
+
+    pub fn clear(&mut self, color: Color) {
+        let mut i = 0;
+        for _ in 0..(self.width * self.height) {
+            self.buf[i+0] = color.r;
+            self.buf[i+1] = color.g;
+            self.buf[i+2] = color.b;
+            self.buf[i+3] = color.a;
+            i += 4;
+        }
+    }
+}
+
 #[no_mangle]
 pub unsafe fn add_one(ptr: *const u32) -> u32 {
     *ptr + 1
@@ -14,7 +48,9 @@ pub unsafe fn draw_spectro(audio_buf: *const f32, audio_len: usize,
                            gfx_buf: *mut u8,
                            gfx_width: usize, gfx_height: usize) {
     analyze_internal(slice::from_raw_parts(audio_buf, audio_len));
-    draw_black(slice::from_raw_parts_mut(gfx_buf, gfx_width * gfx_height * 4), gfx_width, gfx_height);
+
+    let mut surface = Surface::new(gfx_buf, gfx_width, gfx_height);
+    surface.clear(Color { r: 0, g: 0, b: 0, a: 255 });
 }
 
 fn analyze_internal(buf: &[f32]) {
@@ -33,10 +69,7 @@ fn analyze_internal(buf: &[f32]) {
     fft.process(&mut input, &mut output);
 }
 
-fn draw_black(buf: &mut [u8], width: usize, height: usize) {
-}
-
-// When exporting test, main is not exported at all.
+// When exporting other functions explicitly, main is not exported at all.
 fn main() {
     println!("rust: main. NO CALLS HERE");
 }
