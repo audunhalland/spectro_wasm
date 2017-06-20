@@ -1,5 +1,5 @@
 [package]
-name = "spectro2"
+name = "spectro_wasm"
 version = "0.1.0"
 authors = ["Audun Halland <audun.halland@gmail.com>"]
 
