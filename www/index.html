@@ -30,47 +30,46 @@
       Module.HEAPU32[ptr>>2] = 41;
       const result = Module._add_one(ptr);
       console.log('ptr=%s, result=%s', ptr, result);
-      //wm._free(ptr);
+      //Module._free(ptr);
     }
 
     Promise.all([load_spectro2(), navigator.mediaDevices.getUserMedia({ audio: true })])
       .then(([wm, stream]) => {
         const audioBufsize = 2048;
-        const gfxWidth = 400;
-        const gfxHeight = 300;
-        const ctx = new AudioContext();
-        const source = ctx.createMediaStreamSource(stream);
-        const processor = ctx.createScriptProcessor(audioBufsize, 2, 2);
+        const audioCtx = new AudioContext();
+        const audioSource = audioCtx.createMediaStreamSource(stream);
+        const audioProcessor = audioCtx.createScriptProcessor(audioBufsize, 2, 2);
 
         test_memory();
 
         // Audio memory
         const audioBuf = Module._malloc(audioBufsize * 4);
 
-        // Graphics memory
+        // Graphics
+        const gfxWidth = 400;
+        const gfxHeight = 300;
         const gfxSize = gfxWidth * gfxHeight * 4;
         const gfxBuf = Module._malloc(gfxSize);
-        const gfxArray = new Uint8ClampedArray(Module.HEAPU8.buffer, gfxBuf, gfxSize);
-        const gfx = new ImageData(gfxArray, gfxWidth, gfxHeight);
+        const gfx = new ImageData(new Uint8ClampedArray(Module.HEAPU8.buffer, gfxBuf, gfxSize), gfxWidth, gfxHeight);
+        const gfxCtx = document.getElementById('canvas').getContext('2d');
 
-        const canvas = document.getElementById('canvas');
-        const gfxCtx = canvas.getContext('2d');
-
-        processor.onaudioprocess = (event) => {
+        audioProcessor.onaudioprocess = (event) => {
           // left channel only...
           const jsData = event.inputBuffer.getChannelData(0);
 
-          // "memcpy" data into wasm mem pool
-          wm.HEAPF32.set(jsData, audioBuf / 4);
+          // memcpy audio data into wasm memory - offset is divided by 4,
+          // as we're working with 4-byte memory.
+          Module.HEAPF32.set(jsData, audioBuf >> 2);
 
-          // Call into wasm
-          wm._draw_spectro(audioBuf, audioBufsize, gfxBuf, gfxWidth, gfxHeight);
+          // Analyze audio and draw to graphics buffer
+          Module._draw_spectro(audioBuf, audioBufsize, gfxBuf, gfxWidth, gfxHeight);
 
+          // Blit
           gfxCtx.putImageData(gfx, 0, 0);
         };
 
-        source.connect(processor);
-        processor.connect(ctx.destination);
+        audioSource.connect(audioProcessor);
+        audioProcessor.connect(audioCtx.destination);
       }).catch(err => {
         console.log('error! ', err);
       });
