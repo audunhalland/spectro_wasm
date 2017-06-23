@@ -1,3 +1,4 @@
+use std::f32;
 use std::slice;
 
 extern crate rustfft;
@@ -36,6 +37,14 @@ impl<'a> Surface<'a> {
             i += 4;
         }
     }
+
+    pub fn point(&mut self, x: usize, y: usize, color: Color) {
+        let i = y * self.width + x;
+        self.buf[i+0] = color.r;
+        self.buf[i+1] = color.g;
+        self.buf[i+2] = color.b;
+        self.buf[i+3] = color.a;
+    }
 }
 
 #[no_mangle]
@@ -45,15 +54,13 @@ pub unsafe fn add_one(ptr: *const u32) -> u32 {
 
 #[no_mangle]
 pub unsafe fn draw_spectro(audio_buf: *const f32, audio_len: usize,
-                           gfx_buf: *mut u8,
-                           gfx_width: usize, gfx_height: usize) {
-    analyze_internal(slice::from_raw_parts(audio_buf, audio_len));
-
+                           gfx_buf: *mut u8, gfx_width: usize, gfx_height: usize) {
     let mut surface = Surface::new(gfx_buf, gfx_width, gfx_height);
-    surface.clear(Color { r: 0, g: 0, b: 0, a: 255 });
+    draw_spectro_internal(slice::from_raw_parts(audio_buf, audio_len),
+                          &mut surface);
 }
 
-fn analyze_internal(buf: &[f32]) {
+fn draw_spectro_internal(buf: &[f32], surface: &mut Surface) {
     println!("{} of {} samples has energy",
              buf.iter().fold(0, |count, sample| if *sample == 0.0 { count } else { count + 1 } ),
              buf.len());
@@ -67,6 +74,25 @@ fn analyze_internal(buf: &[f32]) {
     let mut planner = rustfft::FFTplanner::new(false);
     let fft = planner.plan_fft(buf.len());
     fft.process(&mut input, &mut output);
+
+    let mut dbs = Vec::new();
+
+    for value in &output {
+        dbs.push(10f32 * (value.re * value.re + value.im * value.im).log10() / 10f32.log10());
+    }
+
+    let min_db = dbs.iter().cloned().fold(f32::NAN, f32::min);
+    let max_db = dbs.iter().cloned().fold(f32::NAN, f32::max);
+
+    surface.clear(Color { r: 0, g: 0, b: 0, a: 255 });
+
+    for x in 0..surface.width {
+        let db = dbs[((x as f64 / surface.width as f64) * output.len() as f64) as usize];
+        let scaled = (db - min_db) / (max_db - min_db);
+        let y = (scaled * surface.height as f32) as usize;
+
+        surface.point(x, y, Color { r: 255, g: 255, b: 255, a: 255 });
+    }
 }
 
 // When exporting other functions explicitly, main is not exported at all.
