@@ -1,3 +1,5 @@
+mod gfx;
+
 use std::f32;
 use std::slice;
 
@@ -5,71 +7,29 @@ extern crate rustfft;
 
 use rustfft::num_complex::Complex;
 
-pub struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8
-}
-
-pub struct Surface {
-    pub buf: Vec<u8>,
-    pub width: usize,
-    pub height: usize
-}
-
-impl Surface {
-    pub fn new(width: usize, height: usize) -> Surface {
-        Surface {
-            buf: vec![0; width * height * 4],
-            width: width,
-            height: height
-        }
-    }
-
-    pub fn clear(&mut self, color: Color) {
-        let mut i = 0;
-        for _ in 0..(self.width * self.height) {
-            self.buf[i+0] = color.r;
-            self.buf[i+1] = color.g;
-            self.buf[i+2] = color.b;
-            self.buf[i+3] = color.a;
-            i += 4;
-        }
-    }
-
-    pub fn point(&mut self, x: usize, y: usize, color: Color) {
-        let i = (y * self.width + x) * 4;
-        self.buf[i+0] = color.r;
-        self.buf[i+1] = color.g;
-        self.buf[i+2] = color.b;
-        self.buf[i+3] = color.a;
-    }
-}
-
-#[no_mangle]
-pub unsafe fn create_surface(width: usize, height: usize) -> *mut Surface {
-    Box::into_raw(Box::new(Surface::new(width, height)))
-}
-
-#[no_mangle]
-pub unsafe fn surface_buf(surface: *mut Surface) -> *const u8 {
-    (*surface).buf.as_ptr()
-}
-
 #[no_mangle]
 pub unsafe fn add_one(ptr: *const u32) -> u32 {
     *ptr + 1
 }
 
 #[no_mangle]
+pub unsafe fn create_surface(width: usize, height: usize) -> *mut gfx::Surface {
+    Box::into_raw(Box::new(gfx::Surface::new(width, height)))
+}
+
+#[no_mangle]
+pub unsafe fn surface_buf(surface: *mut gfx::Surface) -> *const u8 {
+    (*surface).buf.as_ptr()
+}
+
+#[no_mangle]
 pub unsafe fn draw_spectro(audio_buf: *const f32, audio_len: usize,
-                           surface: *mut Surface) {
+                           surface: *mut gfx::Surface) {
     draw_spectro_internal(slice::from_raw_parts(audio_buf, audio_len),
                           &mut *surface);
 }
 
-fn draw_spectro_internal(buf: &[f32], surface: &mut Surface) {
+fn draw_spectro_internal(buf: &[f32], surface: &mut gfx::Surface) {
     println!("surface: {}, {}, {}", surface.buf.len(), surface.width, surface.height);
 
     /*
@@ -100,7 +60,7 @@ fn draw_spectro_internal(buf: &[f32], surface: &mut Surface) {
     let min_db_limit = 0f32;
     let max_db_limit = 100f32;
 
-    surface.clear(Color { r: 0, g: 0, b: 0, a: 255 });
+    surface.clear(gfx::Color { r: 0, g: 0, b: 0, a: 255 });
 
     println!("min, max db = {}, {}", min_db, max_db);
 
@@ -125,7 +85,7 @@ fn draw_spectro_internal(buf: &[f32], surface: &mut Surface) {
         }
 
 
-        surface.point(x, y, Color { r: 255, g: 255, b: 255, a: 255 });
+        surface.point(x, y, gfx::Color { r: 255, g: 255, b: 255, a: 255 });
     }
 }
 
