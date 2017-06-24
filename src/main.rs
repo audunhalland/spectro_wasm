@@ -5,23 +5,23 @@ extern crate rustfft;
 
 use rustfft::num_complex::Complex;
 
-struct Color {
+pub struct Color {
     r: u8,
     g: u8,
     b: u8,
     a: u8
 }
 
-struct Surface<'a> {
-    pub buf: &'a mut [u8],
+pub struct Surface {
+    pub buf: Vec<u8>,
     pub width: usize,
     pub height: usize
 }
 
-impl<'a> Surface<'a> {
-    pub unsafe fn new(buf: *mut u8, width: usize, height: usize) -> Surface<'a> {
+impl Surface {
+    pub fn new(width: usize, height: usize) -> Surface {
         Surface {
-            buf: slice::from_raw_parts_mut(buf, width * height * 4),
+            buf: vec![0; width * height * 4],
             width: width,
             height: height
         }
@@ -48,19 +48,30 @@ impl<'a> Surface<'a> {
 }
 
 #[no_mangle]
+pub unsafe fn create_surface(width: usize, height: usize) -> *mut Surface {
+    Box::into_raw(Box::new(Surface::new(width, height)))
+}
+
+#[no_mangle]
+pub unsafe fn surface_buf(surface: *mut Surface) -> *const u8 {
+    (*surface).buf.as_ptr()
+}
+
+#[no_mangle]
 pub unsafe fn add_one(ptr: *const u32) -> u32 {
     *ptr + 1
 }
 
 #[no_mangle]
 pub unsafe fn draw_spectro(audio_buf: *const f32, audio_len: usize,
-                           gfx_buf: *mut u8, gfx_width: usize, gfx_height: usize) {
-    let mut surface = Surface::new(gfx_buf, gfx_width, gfx_height);
+                           surface: *mut Surface) {
     draw_spectro_internal(slice::from_raw_parts(audio_buf, audio_len),
-                          &mut surface);
+                          &mut *surface);
 }
 
 fn draw_spectro_internal(buf: &[f32], surface: &mut Surface) {
+    println!("surface: {}, {}, {}", surface.buf.len(), surface.width, surface.height);
+
     /*
     println!("{} of {} samples has energy",
              buf.iter().fold(0, |count, sample| if *sample == 0.0 { count } else { count + 1 } ),

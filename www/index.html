@@ -49,9 +49,15 @@
         const gfxWidth = 400;
         const gfxHeight = 300;
         const gfxSize = gfxWidth * gfxHeight * 4;
-        const gfxBuf = Module._malloc(gfxSize);
-        const gfx = new ImageData(new Uint8ClampedArray(Module.HEAPU8.buffer, gfxBuf, gfxSize), gfxWidth, gfxHeight);
-        const gfxCtx = document.getElementById('canvas').getContext('2d');
+
+        // Two surfaces in each environment referencing the same pixel memory
+        const rustSurface = Module._create_surface(gfxWidth, gfxHeight);
+        const jsSurface = new ImageData(new Uint8ClampedArray(Module.HEAPU8.buffer,
+                                                              Module._surface_buf(rustSurface),
+                                                              gfxSize),
+                                        gfxWidth, gfxHeight);
+
+        const canvasCtx = document.getElementById('canvas').getContext('2d');
 
         audioProcessor.onaudioprocess = (event) => {
           // left channel only...
@@ -62,10 +68,10 @@
           Module.HEAPF32.set(jsData, audioBuf >> 2);
 
           // Analyze audio and draw to graphics buffer
-          Module._draw_spectro(audioBuf, audioBufsize, gfxBuf, gfxWidth, gfxHeight);
+          Module._draw_spectro(audioBuf, audioBufsize, rustSurface);
 
           // Blit
-          gfxCtx.putImageData(gfx, 0, 0);
+          canvasCtx.putImageData(jsSurface, 0, 0);
         };
 
         audioSource.connect(audioProcessor);
