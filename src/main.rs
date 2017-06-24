@@ -39,7 +39,7 @@ impl<'a> Surface<'a> {
     }
 
     pub fn point(&mut self, x: usize, y: usize, color: Color) {
-        let i = y * self.width + x;
+        let i = (y * self.width + x) * 4;
         self.buf[i+0] = color.r;
         self.buf[i+1] = color.g;
         self.buf[i+2] = color.b;
@@ -61,9 +61,11 @@ pub unsafe fn draw_spectro(audio_buf: *const f32, audio_len: usize,
 }
 
 fn draw_spectro_internal(buf: &[f32], surface: &mut Surface) {
+    /*
     println!("{} of {} samples has energy",
              buf.iter().fold(0, |count, sample| if *sample == 0.0 { count } else { count + 1 } ),
              buf.len());
+    */
 
     let mut input = Vec::new();
     for sample in buf {
@@ -84,12 +86,33 @@ fn draw_spectro_internal(buf: &[f32], surface: &mut Surface) {
     let min_db = dbs.iter().cloned().fold(f32::NAN, f32::min);
     let max_db = dbs.iter().cloned().fold(f32::NAN, f32::max);
 
+    let min_db_limit = 0f32;
+    let max_db_limit = 100f32;
+
     surface.clear(Color { r: 0, g: 0, b: 0, a: 255 });
 
+    println!("min, max db = {}, {}", min_db, max_db);
+
     for x in 0..surface.width {
-        let db = dbs[((x as f64 / surface.width as f64) * output.len() as f64) as usize];
-        let scaled = (db - min_db) / (max_db - min_db);
-        let y = (scaled * surface.height as f32) as usize;
+        let mut db = dbs[((x as f64 / surface.width as f64) * output.len() as f64) as usize];
+        if db < min_db_limit {
+            db = min_db_limit;
+        } else if db > max_db_limit {
+            db = max_db_limit;
+        }
+
+        let scaled = (db - min_db_limit) / (max_db_limit - min_db_limit);
+        let y = surface.height - (scaled * surface.height as f32) as usize - 1;
+
+        if x < 3 {
+            println!("x={} index={} db={} scaled={} y={}",
+                     x,
+                     ((x as f64 / surface.width as f64) * output.len() as f64) as usize,
+                     db,
+                     scaled,
+                     y);
+        }
+
 
         surface.point(x, y, Color { r: 255, g: 255, b: 255, a: 255 });
     }
