@@ -59,6 +59,8 @@
 
         const canvasCtx = document.getElementById('canvas').getContext('2d');
 
+        const rustSpectro = Module._create_spectro(audioBufsize);
+
         audioProcessor.onaudioprocess = (event) => {
           // left channel only...
           const jsData = event.inputBuffer.getChannelData(0);
@@ -68,7 +70,7 @@
           Module.HEAPF32.set(jsData, audioBuf >> 2);
 
           // Analyze audio and draw to graphics buffer
-          Module._draw_spectro(audioBuf, audioBufsize, rustSurface);
+          Module._draw_spectro(rustSpectro, rustSurface, audioBuf, audioBufsize);
 
           // Blit
           canvasCtx.putImageData(jsSurface, 0, 0);

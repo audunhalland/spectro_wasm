@@ -1,2 +1,2 @@
 [target.wasm32-unknown-emscripten]
-rustflags = ["-Clink-args=-s EXPORTED_FUNCTIONS=['_add_one','_draw_spectro','_create_surface','_surface_buf']"]
+rustflags = ["-Clink-args=-s EXPORTED_FUNCTIONS=['_add_one','_create_surface','_surface_buf','_create_spectro','_draw_spectro']"]
