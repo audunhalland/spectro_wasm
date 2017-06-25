@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 pub struct Spectro {
     bufsize: usize,
+    sample_rate: f32,
     window: Vec<f32>,
     fft: Arc<rustfft::FFT<f32>>
 }
@@ -21,6 +22,7 @@ impl Spectro {
 
         Spectro {
             bufsize: bufsize,
+            sample_rate: 44100.0,
             window: window,
             fft: planner.plan_fft(bufsize)
         }
@@ -39,46 +41,42 @@ impl Spectro {
 
         self.fft.process(&mut input, &mut output);
 
-        let dbs: Vec<f32> = output.iter()
-            .map(|val| 10f32 * (val.re.powi(2) + val.im.powi(2)).log10() / 10f32.log10())
+        let energies: Vec<f32> = output.iter()
+            .map(|val| val.re.powi(2) + val.im.powi(2))
             .collect();
 
-        let min_db = dbs.iter().cloned().fold(f32::NAN, f32::min);
-        let max_db = dbs.iter().cloned().fold(f32::NAN, f32::max);
-
-        let min_db_limit = 0f32;
-        let max_db_limit = 100f32;
-
         surface.clear(gfx::Color { r: 0, g: 0, b: 0, a: 255 });
-
-        println!("min, max db = {}, {}", min_db, max_db);
 
         let graph_color = gfx::Color { r: 255, g: 255, b: 255, a: 255 };
         let mut prev_point = gfx::Point { x: 0, y: surface.height - 1 };
 
+        let min_freq: f32 = self.sample_rate / self.bufsize as f32;
+        let max_freq: f32  = self.sample_rate / 2f32;
+
+        let mut prev_freq = min_freq;
+
         for x in 0..surface.width {
-            let mut db = dbs[((x as f64 / surface.width as f64) * output.len() as f64) as usize];
-            if db < min_db_limit {
-                db = min_db_limit;
-            } else if db > max_db_limit {
-                db = max_db_limit;
-            }
+            let step = x as f32 / surface.width as f32;
+            let freq = min_freq * (max_freq / min_freq).powf(step);
 
-            let scaled = (db - min_db_limit) / (max_db_limit - min_db_limit);
-            let y = surface.height - (scaled * surface.height as f32) as isize - 1;
+            let bin_index0 = (prev_freq / min_freq) as usize;
+            let bin_index1 = (freq / min_freq) as usize;
 
-            if x < 3 {
-                println!("x={} index={} db={} scaled={} y={}",
-                         x,
-                         ((x as f64 / surface.width as f64) * output.len() as f64) as usize,
-                         db,
-                         scaled,
-                         y);
-            }
+            let bin_energy = (&energies[bin_index0 .. bin_index1 + 1])
+                .iter()
+                .fold(0.0, |sum, e| sum + e);
+            let db = 10.0 * bin_energy.log10();
 
-            let next_point = gfx::Point { x: x, y: y };
+            println!("energy for x={}: {}, db: {}", x, bin_energy, db);
+
+            let next_point = gfx::Point {
+                x: x,
+                y: surface.height - ((f32::max(db, 0.0) / 70.0) * surface.height as f32) as isize - 1
+            };
 
             surface.bresenham(prev_point.clone(), next_point.clone(), graph_color.clone());
+
+            prev_freq = freq;
             prev_point = next_point.clone();
         }
     }
