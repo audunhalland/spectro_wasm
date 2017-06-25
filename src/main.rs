@@ -3,6 +3,7 @@ mod spectro;
 
 use std::slice;
 
+extern crate bresenham;
 extern crate rustfft;
 
 #[no_mangle]

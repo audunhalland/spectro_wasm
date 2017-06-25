@@ -53,6 +53,9 @@ impl Spectro {
 
         println!("min, max db = {}, {}", min_db, max_db);
 
+        let graph_color = gfx::Color { r: 255, g: 255, b: 255, a: 255 };
+        let mut prev_point = gfx::Point { x: 0, y: surface.height - 1 };
+
         for x in 0..surface.width {
             let mut db = dbs[((x as f64 / surface.width as f64) * output.len() as f64) as usize];
             if db < min_db_limit {
@@ -62,7 +65,7 @@ impl Spectro {
             }
 
             let scaled = (db - min_db_limit) / (max_db_limit - min_db_limit);
-            let y = surface.height - (scaled * surface.height as f32) as usize - 1;
+            let y = surface.height - (scaled * surface.height as f32) as isize - 1;
 
             if x < 3 {
                 println!("x={} index={} db={} scaled={} y={}",
@@ -73,8 +76,10 @@ impl Spectro {
                          y);
             }
 
+            let next_point = gfx::Point { x: x, y: y };
 
-            surface.point(x, y, gfx::Color { r: 255, g: 255, b: 255, a: 255 });
+            surface.bresenham(prev_point.clone(), next_point.clone(), graph_color.clone());
+            prev_point = next_point.clone();
         }
     }
 }

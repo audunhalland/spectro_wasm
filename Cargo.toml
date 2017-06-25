@@ -5,3 +5,4 @@ authors = ["Audun Halland <audun.halland@gmail.com>"]
 
 [dependencies]
 rustfft = "2.0.0"
+bresenham = "0.1.1"

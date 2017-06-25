@@ -2,8 +2,14 @@
 name = "spectro_wasm"
 version = "0.1.0"
 dependencies = [
+ "bresenham 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustfft 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "bresenham"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "num-complex"
@@ -34,6 +40,7 @@ dependencies = [
 ]
 
 [metadata]
+"checksum bresenham 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "bfc1116225f66d2ea341a26503f83a6b1205070a6f7199ce1f1550ead91f6fd7"
 "checksum num-complex 0.1.38 (registry+https://github.com/rust-lang/crates.io-index)" = "412dfc143c56579aa6a22c574e38ddbf724522f1280ae2b257498cccff3fb6af"
 "checksum num-traits 0.1.39 (registry+https://github.com/rust-lang/crates.io-index)" = "1708c0628602a98b52fad936cf3edb9a107af06e52e49fdf0707e884456a6af6"
 "checksum rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)" = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
