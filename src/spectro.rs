@@ -8,16 +8,20 @@ use std::sync::Arc;
 
 pub struct Spectro {
     bufsize: usize,
+    window: Vec<f32>,
     fft: Arc<rustfft::FFT<f32>>
 }
 
 impl Spectro {
     pub fn new(bufsize: usize) -> Spectro {
+        let window = (0..bufsize)
+            .map(|i| ((f32::consts::PI * i as f32) / (bufsize - 1) as f32).sin().powi(2))
+            .collect();
         let mut planner = rustfft::FFTplanner::new(false);
-        let mut window = vec![0f32; bufsize];
 
         Spectro {
             bufsize: bufsize,
+            window: window,
             fft: planner.plan_fft(bufsize)
         }
     }
@@ -27,19 +31,17 @@ impl Spectro {
             panic!()
         }
 
-        let mut input = Vec::with_capacity(self.bufsize);
-        for sample in signal {
-            input.push(Complex { re: *sample, im: 0.0 });
-        }
+        // Multiply signal with the window function
+        let mut input: Vec<Complex<f32>> = signal.iter().zip(&self.window)
+            .map(|(sample, window_n)| Complex { re: sample * window_n, im: 0.0 })
+            .collect();
         let mut output = vec![Complex { re: 0.0, im: 0.0 }; self.bufsize];
 
         self.fft.process(&mut input, &mut output);
 
-        let mut dbs = Vec::new();
-
-        for value in &output {
-            dbs.push(10f32 * (value.re * value.re + value.im * value.im).log10() / 10f32.log10());
-        }
+        let dbs: Vec<f32> = output.iter()
+            .map(|val| 10f32 * (val.re.powi(2) + val.im.powi(2)).log10() / 10f32.log10())
+            .collect();
 
         let min_db = dbs.iter().cloned().fold(f32::NAN, f32::min);
         let max_db = dbs.iter().cloned().fold(f32::NAN, f32::max);
