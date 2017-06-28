@@ -10,8 +10,10 @@ $ curl -vs https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-port
 $ cd emsdk-portable
 $ ./emsdk update
 $ ./emsdk install sdk-incoming-64bit
-$ source ./emsdk_env.sh```
+$ source ./emsdk_env.sh
+```
 
 # Build
-```npm install --global http-server
-./build.py```
+```$ npm install --global http-server
+$ ./build.py
+```
