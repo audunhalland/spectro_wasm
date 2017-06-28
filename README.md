@@ -2,7 +2,8 @@
 A WebAssembly test project
 
 # Build dependencies
-```$ curl -sf -L https://static.rust-lang.org/rustup.sh | sh
+```
+$ curl -sf -L https://static.rust-lang.org/rustup.sh | sh
 $ rustup toolchain add nightly
 $ rustup target add wasm32-unknown-emscripten --toolchain nightly
 
@@ -14,6 +15,7 @@ $ source ./emsdk_env.sh
 ```
 
 # Build
-```$ npm install --global http-server
+```
+$ npm install --global http-server
 $ ./build.py
 ```
