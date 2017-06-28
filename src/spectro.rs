@@ -53,7 +53,7 @@ impl Spectro {
 
         surface.clear(gfx::Color { r: 0, g: 0, b: 0, a: 255 });
 
-        for mag in [10.0, 100.0, 1000.0].iter() {
+        for mag in [10.0, 100.0, 1000.0, 10000.0].iter() {
             self.draw_freq_marker(*mag, gfx::Color { r: 100, g: 255, b: 255, a: 255 }, &mut surface);
             for i in 2..10 {
                 let f = mag * i as isize as f32;
