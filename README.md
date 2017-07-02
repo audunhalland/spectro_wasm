@@ -17,5 +17,5 @@ $ source ./emsdk_env.sh
 # Build
 ```
 $ npm install --global http-server
-$ ./build.py
+$ ./serve.py
 ```

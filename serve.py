@@ -1,14 +1,24 @@
 #!/usr/bin/env python
 
-import glob, os, subprocess, shutil
+import argparse, glob, os, subprocess, shutil
 
-subprocess.check_call(['cargo', 'build', '--target=wasm32-unknown-emscripten'])
+ap = argparse.ArgumentParser()
+ap.add_argument('--release', action='store_true')
 
-dbg_pattern = 'target/wasm32-unknown-emscripten/debug/deps/*-????????????????.%s'
+args = ap.parse_args()
+
+mode = 'release' if args.release else 'debug'
+build_cmd = ['cargo', 'build', '--target=wasm32-unknown-emscripten']
+if args.release:
+    build_cmd.append('--release')
+
+subprocess.check_call(build_cmd)
+
+pattern = 'target/wasm32-unknown-emscripten/%s/deps/*-????????????????.%%s' % mode
 
 for ext in ['js', 'wasm', 'wast']:
-    shutil.copy(sorted(glob.iglob(dbg_pattern % ext),
-                       key=os.path.getctime)[-1],
-                'www/spectro2.%s' % ext)
+    files = sorted(glob.iglob(pattern % ext), key=os.path.getctime)
+    if files:
+        shutil.copy(files[-1], 'www/spectro2.%s' % ext)
 
 subprocess.check_call(['http-server', 'www'])
