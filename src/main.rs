@@ -18,7 +18,7 @@ pub fn create_surface(width: usize, height: usize) -> *mut gfx::Surface {
 
 #[no_mangle]
 pub unsafe fn surface_buf(surface: *mut gfx::Surface) -> *const u8 {
-    (*surface).buf.as_ptr()
+    (*surface).buf.as_ptr() as *const u8
 }
 
 #[no_mangle]

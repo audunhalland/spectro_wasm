@@ -8,6 +8,15 @@ pub struct Color {
     pub a: u8
 }
 
+impl Color {
+    pub fn as_u32(&self) -> u32 {
+        (self.r as u32) << 24
+            | (self.g as u32) << 16
+            | (self.b as u32) << 8
+            | (self.a as u32)
+    }
+}
+
 #[derive(Clone)]
 pub struct Point {
     pub x: isize,
@@ -15,7 +24,7 @@ pub struct Point {
 }
 
 pub struct Surface {
-    pub buf: Vec<u8>,
+    pub buf: Vec<u32>,
     pub width: isize,
     pub height: isize
 }
@@ -23,37 +32,34 @@ pub struct Surface {
 impl Surface {
     pub fn new(width: usize, height: usize) -> Surface {
         Surface {
-            buf: vec![0; width * height * 4],
+            buf: vec![0; width * height],
             width: width as isize,
             height: height as isize
         }
     }
 
     pub fn clear(&mut self, color: Color) {
-        let mut i = 0;
-        for _ in 0..(self.width * self.height) {
-            self.buf[i+0] = color.r;
-            self.buf[i+1] = color.g;
-            self.buf[i+2] = color.b;
-            self.buf[i+3] = color.a;
-            i += 4;
+        let value = color.as_u32();
+        for p in &mut self.buf {
+            *p = value;
         }
     }
 
     pub fn pixel(&mut self, point: Point, color: Color) {
-        let i = (point.y * self.width + point.x) * 4;
+        self.pixel_oob_check(point, color.as_u32())
+    }
+
+    fn pixel_oob_check(&mut self, point: Point, color: u32) {
+        let i = point.y * self.width + point.x;
         if i >= 0 && i <= self.buf.len() as isize {
-            let iu = i as usize;
-            self.buf[iu+0] = color.r;
-            self.buf[iu+1] = color.g;
-            self.buf[iu+2] = color.b;
-            self.buf[iu+3] = color.a;
+            self.buf[i as usize] = color;
         }
     }
 
     pub fn bresenham(&mut self, point0: Point, point1: Point, color: Color) {
+        let value = color.as_u32();
         for (x, y) in bresenham::Bresenham::new((point0.x, point0.y), (point1.x, point1.y)) {
-            self.pixel(Point { x: x, y: y }, color.clone());
+            self.pixel_oob_check(Point { x: x, y: y }, value);
         }
     }
 }
